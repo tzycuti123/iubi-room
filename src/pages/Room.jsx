@@ -98,7 +98,7 @@ export default function Room() {
   const copyRoomLink = () => {
     navigator.clipboard.writeText(window.location.href);
     setShowCopied(true);
-    setTimeout(() => setShowCopied(false), 2000);
+    setTimeout(() => setShowCopied(false), 3000);
   };
 
   // YouTube Player setup
