@@ -23,6 +23,7 @@ export default function Room() {
   const navigate = useNavigate();
   const [socket, setSocket] = useState(null);
   const [isHost, setIsHost] = useState(false);
+  const [hasJoinedAudio, setHasJoinedAudio] = useState(false);
 
   const [roomState, setRoomState] = useState({ queue: [], currentVideo: null });
   const [inputValue, setInputValue] = useState('');
@@ -174,8 +175,28 @@ export default function Room() {
     },
   };
 
+  const handleJoinAudio = () => {
+    if (playerRef.current) {
+      playerRef.current.playVideo();
+      setHasJoinedAudio(true);
+    }
+  };
+
   return (
     <div className="app-container">
+      {/* Join Audio Overlay for Participants */}
+      {!isHost && !hasJoinedAudio && roomState.currentVideo && (
+        <div className="join-audio-overlay">
+          <div className="overlay-content">
+            <h2 className="title-secondary">CONNECTED</h2>
+            <p style={{ fontSize: '0.7rem', opacity: 0.6, marginBottom: '2rem' }}>BROWSER BLOCKED AUTOPLAY</p>
+            <button className="btn-primary" onClick={handleJoinAudio}>
+              START LISTENING
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Top Navigation */}
       <div className="top-bar">
         <div 
@@ -325,7 +346,7 @@ export default function Room() {
 
       {/* Hidden Youtube Player */}
       {roomState.currentVideo && (
-        <div style={{ display: 'none' }}>
+        <div style={{ position: 'fixed', top: -100, left: -100, width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}>
           <YouTube
             videoId={roomState.currentVideo.id}
             opts={playerOpts}
