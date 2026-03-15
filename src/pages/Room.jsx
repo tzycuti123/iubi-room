@@ -31,10 +31,16 @@ export default function Room() {
 
     newSocket.emit('joinRoom', roomId, (initialState) => {
       setRoomState(initialState);
+      if (initialState.currentVideo) {
+        setIsPlaying(initialState.isPlaying);
+      }
     });
 
     newSocket.on('syncState', (state) => {
       setRoomState(state);
+      if (state.currentVideo) {
+        setIsPlaying(state.isPlaying);
+      }
     });
 
     newSocket.on('actionSync', ({ action, time, by }) => {
@@ -104,9 +110,21 @@ export default function Room() {
   // YouTube Player setup
   const onReady = (event) => {
     playerRef.current = event.target;
-    // Auto-play might be blocked by browser without user interaction, but we try.
+    
+    // Sync logic for new joiners
     if (roomState.currentVideo) {
-      event.target.playVideo();
+      let targetTime = roomState.lastSeekTime || 0;
+      if (roomState.isPlaying && roomState.lastKnownTimestamp) {
+        const diffInSeconds = (Date.now() - roomState.lastKnownTimestamp) / 1000;
+        targetTime += diffInSeconds;
+      }
+      
+      event.target.seekTo(targetTime);
+      if (roomState.isPlaying) {
+        event.target.playVideo();
+      } else {
+        event.target.pauseVideo();
+      }
     }
   };
 

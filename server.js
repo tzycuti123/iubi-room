@@ -26,6 +26,9 @@ io.on('connection', (socket) => {
       rooms[roomId] = {
         queue: [],
         currentVideo: null,
+        isPlaying: false,
+        lastSeekTime: 0,
+        lastKnownTimestamp: Date.now()
       };
     }
     console.log(`User ${socket.id} joined room ${roomId}`);
@@ -36,6 +39,9 @@ io.on('connection', (socket) => {
     if (!rooms[roomId]) return;
     if (!rooms[roomId].currentVideo) {
       rooms[roomId].currentVideo = video;
+      rooms[roomId].isPlaying = true;
+      rooms[roomId].lastSeekTime = 0;
+      rooms[roomId].lastKnownTimestamp = Date.now();
     } else {
       rooms[roomId].queue.push(video);
     }
@@ -54,13 +60,22 @@ io.on('connection', (socket) => {
     if (!rooms[roomId]) return;
     if (rooms[roomId].queue.length > 0) {
       rooms[roomId].currentVideo = rooms[roomId].queue.shift();
+      rooms[roomId].isPlaying = true;
+      rooms[roomId].lastSeekTime = 0;
+      rooms[roomId].lastKnownTimestamp = Date.now();
     } else {
       rooms[roomId].currentVideo = null;
+      rooms[roomId].isPlaying = false;
     }
     io.to(roomId).emit('syncState', rooms[roomId]);
   });
 
   socket.on('syncAction', ({ roomId, action, time }) => {
+    if (rooms[roomId]) {
+      rooms[roomId].isPlaying = (action === 'play');
+      rooms[roomId].lastSeekTime = time;
+      rooms[roomId].lastKnownTimestamp = Date.now();
+    }
     // action: 'play' or 'pause' or 'seek'
     // Ensure all clients in room react out
     socket.to(roomId).emit('actionSync', { action, time, by: socket.id });
