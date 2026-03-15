@@ -123,25 +123,26 @@ export default function Room() {
     setTimeout(() => setShowCopied(false), 3000);
   };
 
-  // YouTube Player setup
+  const syncPlayerWithRoom = (player) => {
+    if (!player || !roomState.currentVideo) return;
+
+    let targetTime = roomState.lastSeekTime || 0;
+    if (roomState.isPlaying && roomState.lastKnownTimestamp) {
+      const diffInSeconds = (Date.now() - roomState.lastKnownTimestamp) / 1000;
+      targetTime += diffInSeconds;
+    }
+
+    player.seekTo(targetTime, true);
+    if (roomState.isPlaying) {
+      player.playVideo();
+    } else {
+      player.pauseVideo();
+    }
+  };
+
   const onReady = (event) => {
     playerRef.current = event.target;
-    
-    // Sync logic for new joiners
-    if (roomState.currentVideo) {
-      let targetTime = roomState.lastSeekTime || 0;
-      if (roomState.isPlaying && roomState.lastKnownTimestamp) {
-        const diffInSeconds = (Date.now() - roomState.lastKnownTimestamp) / 1000;
-        targetTime += diffInSeconds;
-      }
-      
-      event.target.seekTo(targetTime);
-      if (roomState.isPlaying) {
-        event.target.playVideo();
-      } else {
-        event.target.pauseVideo();
-      }
-    }
+    syncPlayerWithRoom(event.target);
   };
 
   const onStateChange = async (event) => {
@@ -153,14 +154,18 @@ export default function Room() {
     const player = event.target;
     const time = await player.getCurrentTime();
 
-    // YouTube Player State: 1 = playing, 2 = paused, 0 = ended
-    if (event.data === 1) { // Playing
-      setIsPlaying(true);
-      socket.emit('syncAction', { roomId, action: 'play', time });
-    } else if (event.data === 2) { // Paused
-      setIsPlaying(false);
-      socket.emit('syncAction', { roomId, action: 'pause', time });
-    } else if (event.data === 0) { // Ended
+    // Only host emits sync actions for play/pause/seek
+    if (isHost) {
+      if (event.data === 1) { // Playing
+        setIsPlaying(true);
+        socket.emit('syncAction', { roomId, action: 'play', time });
+      } else if (event.data === 2) { // Paused
+        setIsPlaying(false);
+        socket.emit('syncAction', { roomId, action: 'pause', time });
+      }
+    }
+
+    if (event.data === 0) { // Ended
       handlePlayNext();
     }
   };
@@ -177,8 +182,8 @@ export default function Room() {
 
   const handleJoinAudio = () => {
     if (playerRef.current) {
-      playerRef.current.playVideo();
       setHasJoinedAudio(true);
+      syncPlayerWithRoom(playerRef.current);
     }
   };
 
@@ -188,10 +193,8 @@ export default function Room() {
       {!isHost && !hasJoinedAudio && roomState.currentVideo && (
         <div className="join-audio-overlay">
           <div className="overlay-content">
-            <h2 className="title-secondary">CONNECTED</h2>
-            <p style={{ fontSize: '0.7rem', opacity: 0.6, marginBottom: '2rem' }}>BROWSER BLOCKED AUTOPLAY</p>
-            <button className="btn-primary" onClick={handleJoinAudio}>
-              START LISTENING
+            <button className="btn-primary" onClick={handleJoinAudio} style={{ padding: '1.5rem 4rem', fontSize: '1.2rem' }}>
+              JOIN ROOM
             </button>
           </div>
         </div>
