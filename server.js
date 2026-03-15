@@ -9,7 +9,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["https://iubi-room.vercel.app", "http://localhost:5173"],
+    origin: true,
     methods: ["GET", "POST"],
     credentials: true
   }
