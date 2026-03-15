@@ -215,6 +215,9 @@ input {
   height: 32%;
   background-color: white;
   border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 5;
 }
 
@@ -225,6 +228,9 @@ input {
   height: 5%;
   background-color: #000;
   border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 10;
 }
 
@@ -451,12 +457,15 @@ input {
   }
 
   .vinyl-section {
-    min-height: 300px;
+    min-height: 280px;
     width: 100%;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    padding-top: 2rem;
+    padding: 2rem 0;
     pointer-events: none;
     flex: none;
+    position: relative;
   }
 
   .vinyl-record {
@@ -464,18 +473,23 @@ input {
     height: 250px;
     position: relative;
     left: auto;
-    margin: 0 auto;
+    margin: 0; /* Remove auto-margin since parent is flex-centered */
+    z-index: 5;
   }
 
   .vinyl-section::before {
     width: 270px;
     height: 270px;
     left: 50%;
+    top: 50%;
     transform: translate(-50%, -50%);
+    z-index: 0;
   }
 
   .vinyl-section::after {
-    left: calc(50% + 135px); /* Position dot on the edge of the 270px circle */
+    left: calc(50% + 135px);
+    top: 50%;
+    transform: translate(-50%, -50%);
   }
 
   .content-section {
@@ -532,6 +546,7 @@ input {
   
   .vinyl-section::after {
     left: calc(50% + 110px);
+    top: 50%;
   }
 
   .top-bar {
