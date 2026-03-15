@@ -435,30 +435,106 @@ input {
 }
 
 @media (max-width: 1024px) {
+  .app-container {
+    overflow-y: auto;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .top-bar {
+    padding: 1rem 1.5rem;
+  }
+
   .room-layout {
     flex-direction: column;
+    padding-bottom: 8rem; /* Space for fixed controls */
   }
 
   .vinyl-section {
-    min-height: 100px;
-    opacity: 0.1;
+    min-height: 300px;
+    width: 100%;
+    justify-content: center;
+    padding-top: 2rem;
+    pointer-events: none;
+    flex: none;
   }
 
   .vinyl-record {
-    width: 80vw;
-    height: 80vw;
-    margin: 0 auto;
+    width: 250px;
+    height: 250px;
     position: relative;
     left: auto;
+    margin: 0 auto;
+  }
+
+  .vinyl-section::before {
+    width: 270px;
+    height: 270px;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .vinyl-section::after {
+    left: calc(50% + 135px); /* Position dot on the edge of the 270px circle */
   }
 
   .content-section {
-    width: 100%;
-    margin-left: 0;
-    padding: 2rem;
+    padding: 1.5rem;
+    max-width: 100%;
+    max-height: none;
+    overflow: visible;
   }
 
   .title-primary {
-    font-size: 5rem;
+    font-size: 3.5rem;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .input-bar {
+    margin-bottom: 2rem;
+  }
+
+  .scrollable-list-area {
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .track-list {
+    max-width: 100%;
+  }
+
+  .track-item {
+    gap: 0.8rem;
+  }
+
+  .track-thumbnail {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Adjustments for very small screens */
+@media (max-width: 480px) {
+  .title-primary {
+    font-size: 2.5rem;
+  }
+  
+  .vinyl-record {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .vinyl-section::before {
+    width: 220px;
+    height: 220px;
+  }
+  
+  .vinyl-section::after {
+    left: calc(50% + 110px);
+  }
+
+  .top-bar {
+    font-size: 0.7rem;
   }
 }
