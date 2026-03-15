@@ -5,6 +5,10 @@ export default function Home() {
 
   const createRoom = () => {
     const roomId = Math.random().toString(36).substring(2, 9);
+    // Generate a unique token for the host
+    const hostToken = Math.random().toString(36).substring(2, 15);
+    // Set cookie: host_{roomId}={token}; path=/
+    document.cookie = `host_${roomId}=${hostToken}; path=/; max-age=86400`; // 24h
     navigate(`/room/${roomId}`);
   };
 

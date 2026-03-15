@@ -17,22 +17,44 @@ const io = new Server(server, {
 
 const rooms = {};
 
+// Helper to find roomId by host socketId
+const findRoomByHost = (socketId) => {
+  for (const id in rooms) {
+    if (rooms[id].hostSocketId === socketId) return id;
+  }
+  return null;
+};
+
 io.on('connection', (socket) => {
   console.log('User connected', socket.id);
 
-  socket.on('joinRoom', (roomId, callback) => {
+  socket.on('joinRoom', (roomId, hostToken, callback) => {
     socket.join(roomId);
+    
     if (!rooms[roomId]) {
+      // First person joins or room doesn't exist? 
+      // Actually, if a room is created via Home, the cookie is set.
+      // If someone joins with a token, they are the owner.
       rooms[roomId] = {
         queue: [],
         currentVideo: null,
         isPlaying: false,
         lastSeekTime: 0,
-        lastKnownTimestamp: Date.now()
+        lastKnownTimestamp: Date.now(),
+        hostToken: hostToken, // First token provided becomes THE host token
+        hostSocketId: socket.id
       };
+      console.log(`Room ${roomId} created with host ${socket.id}`);
+    } else {
+      // Room exists. If provided token matches, update hostSocketId
+      if (hostToken && rooms[roomId].hostToken === hostToken) {
+        rooms[roomId].hostSocketId = socket.id;
+        console.log(`Host re-connected to room ${roomId}`);
+      }
     }
-    console.log(`User ${socket.id} joined room ${roomId}`);
-    if (callback) callback(rooms[roomId]);
+    
+    const isHost = rooms[roomId].hostSocketId === socket.id;
+    if (callback) callback({ ...rooms[roomId], isHost });
   });
 
   socket.on('addVideo', ({ roomId, video }) => {
@@ -71,18 +93,29 @@ io.on('connection', (socket) => {
   });
 
   socket.on('syncAction', ({ roomId, action, time }) => {
-    if (rooms[roomId]) {
-      rooms[roomId].isPlaying = (action === 'play');
-      rooms[roomId].lastSeekTime = time;
-      rooms[roomId].lastKnownTimestamp = Date.now();
+    if (!rooms[roomId]) return;
+    
+    // Only host can play/pause
+    if (rooms[roomId].hostSocketId !== socket.id) {
+       console.log("Blocked non-host action");
+       return;
     }
-    // action: 'play' or 'pause' or 'seek'
-    // Ensure all clients in room react out
+
+    rooms[roomId].isPlaying = (action === 'play');
+    rooms[roomId].lastSeekTime = time;
+    rooms[roomId].lastKnownTimestamp = Date.now();
+    
     socket.to(roomId).emit('actionSync', { action, time, by: socket.id });
   });
 
   socket.on('disconnect', () => {
     console.log('User disconnected', socket.id);
+    const hostRoomId = findRoomByHost(socket.id);
+    if (hostRoomId) {
+      console.log(`Host left room ${hostRoomId}, deleting room.`);
+      io.to(hostRoomId).emit('roomClosed');
+      delete rooms[hostRoomId];
+    }
   });
 });
 

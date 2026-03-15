@@ -6,6 +6,12 @@ import { Play, Pause, SkipForward, Copy, Link as LinkIcon } from 'lucide-react';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000';
 
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+};
+
 function extractVideoId(url) {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
   const match = url.match(regExp);
@@ -16,6 +22,7 @@ export default function Room() {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const [socket, setSocket] = useState(null);
+  const [isHost, setIsHost] = useState(false);
 
   const [roomState, setRoomState] = useState({ queue: [], currentVideo: null });
   const [inputValue, setInputValue] = useState('');
@@ -29,10 +36,13 @@ export default function Room() {
     const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
 
-    newSocket.emit('joinRoom', roomId, (initialState) => {
-      setRoomState(initialState);
-      if (initialState.currentVideo) {
-        setIsPlaying(initialState.isPlaying);
+    const hostToken = getCookie(`host_${roomId}`);
+
+    newSocket.emit('joinRoom', roomId, hostToken, (response) => {
+      setRoomState(response);
+      setIsHost(response.isHost);
+      if (response.currentVideo) {
+        setIsPlaying(response.isPlaying);
       }
     });
 
@@ -41,6 +51,11 @@ export default function Room() {
       if (state.currentVideo) {
         setIsPlaying(state.isPlaying);
       }
+    });
+
+    newSocket.on('roomClosed', () => {
+      alert("Host has left. Room closed.");
+      navigate('/');
     });
 
     newSocket.on('actionSync', ({ action, time, by }) => {
@@ -283,20 +298,22 @@ export default function Room() {
 
       {roomState.currentVideo && (
         <div style={{ position: 'fixed', bottom: '3rem', right: '3rem', display: 'flex', gap: '0.5rem', zIndex: 100 }}>
-          <button
-            onClick={() => {
-              if (playerRef.current) {
-                if (isPlaying) {
-                  playerRef.current.pauseVideo();
-                } else {
-                  playerRef.current.playVideo();
+          {isHost && (
+            <button
+              onClick={() => {
+                if (playerRef.current) {
+                  if (isPlaying) {
+                    playerRef.current.pauseVideo();
+                  } else {
+                    playerRef.current.playVideo();
+                  }
                 }
-              }
-            }}
-            style={{ background: 'var(--color-text-main)', color: '#fff', padding: '1rem', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            {isPlaying ? <Pause size={20} fill="#fff" /> : <Play size={20} fill="#fff" />}
-          </button>
+              }}
+              style={{ background: 'var(--color-text-main)', color: '#fff', padding: '1rem', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              {isPlaying ? <Pause size={20} fill="#fff" /> : <Play size={20} fill="#fff" />}
+            </button>
+          )}
           <button
             onClick={handlePlayNext}
             style={{ background: '#fff', border: '1px solid #000', padding: '1rem', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
