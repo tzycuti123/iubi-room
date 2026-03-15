@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import YouTube from 'react-youtube';
 import { Play, Pause, SkipForward, Copy, Link as LinkIcon } from 'lucide-react';
@@ -14,10 +14,12 @@ function extractVideoId(url) {
 
 export default function Room() {
   const { roomId } = useParams();
+  const navigate = useNavigate();
   const [socket, setSocket] = useState(null);
 
   const [roomState, setRoomState] = useState({ queue: [], currentVideo: null });
   const [inputValue, setInputValue] = useState('');
+  const [showCopied, setShowCopied] = useState(false);
 
   const playerRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -67,16 +69,12 @@ export default function Room() {
     let videoId = extractVideoId(inputValue) || (inputValue.length === 11 ? inputValue : null);
 
     if (videoId) {
-      // For a truly premium feel, we simulate better metadata display
-      // In production, we'd use the YouTube Data API v3 here.
-      // We parse the title/artist if possible or fallback.
       const video = {
         id: videoId,
         title: "Track Title Loading...",
         artist: "Channel Name"
       };
 
-      // Attempt to get basic info via OEmbed (No API Key Required)
       try {
         const res = await fetch(`https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=${videoId}&format=json`);
         const data = await res.json();
@@ -99,7 +97,8 @@ export default function Room() {
 
   const copyRoomLink = () => {
     navigator.clipboard.writeText(window.location.href);
-    alert('Room link copied!');
+    setShowCopied(true);
+    setTimeout(() => setShowCopied(false), 2000);
   };
 
   // YouTube Player setup
@@ -146,11 +145,17 @@ export default function Room() {
     <div className="app-container">
       {/* Top Navigation */}
       <div className="top-bar">
-        <div>IU BI</div>
-        <div>
+        <div 
+          onClick={() => navigate('/')} 
+          style={{ cursor: 'pointer', fontWeight: 'bold', color: 'var(--color-accent)' }}
+        >
+          QUIT ROOM
+        </div>
+        <div style={{ position: 'relative' }}>
           <button onClick={copyRoomLink} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Copy size={14} /> ROOM: {roomId}
           </button>
+          {showCopied && <div className="copied-tooltip">Copied!</div>}
         </div>
       </div>
 

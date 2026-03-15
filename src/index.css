@@ -63,6 +63,25 @@ input {
   position: relative;
 }
 
+.copied-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-accent);
+  color: white;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.6rem;
+  border-radius: 4px;
+  margin-top: 5px;
+  animation: fade-in-up 0.2s ease;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translate(-50%, 5px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
 .room-layout {
   display: flex;
   flex: 1;
@@ -490,6 +509,10 @@ input {
     left: calc(50% + 135px);
     top: 50%;
     transform: translate(-50%, -50%);
+  }
+
+  .visualizer-icon {
+    display: none;
   }
 
   .content-section {
