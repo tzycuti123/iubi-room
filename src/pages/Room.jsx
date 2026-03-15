@@ -55,8 +55,7 @@ export default function Room() {
     });
 
     newSocket.on('roomClosed', () => {
-      alert("Host has left. Room closed.");
-      navigate('/');
+      navigate('/404');
     });
 
     newSocket.on('actionSync', ({ action, time, by }) => {
@@ -68,11 +67,12 @@ export default function Room() {
 
       try {
         if (action === 'play') {
-          player.seekTo(time);
+          // Add a tiny buffer (0.1s) for network lag reach
+          player.seekTo(time + 0.1, true);
           player.playVideo();
           setIsPlaying(true);
         } else if (action === 'pause') {
-          player.seekTo(time);
+          player.seekTo(time, true);
           player.pauseVideo();
           setIsPlaying(false);
         }
@@ -130,6 +130,8 @@ export default function Room() {
     if (roomState.isPlaying && roomState.lastKnownTimestamp) {
       const diffInSeconds = (Date.now() - roomState.lastKnownTimestamp) / 1000;
       targetTime += diffInSeconds;
+      // Add small buffer (0.2s) to account for loading/seeking latency
+      targetTime += 0.2;
     }
 
     player.seekTo(targetTime, true);
